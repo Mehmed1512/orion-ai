@@ -1,10 +1,10 @@
 import os
+import json
 import datetime
+import requests
 import streamlit as st
-from google import genai
-from google.genai import types
 
-# إعدادات الصفحة الرئيسية
+# إعدادات الصفحة
 st.set_page_config(
     page_title="أوريون الشام Enterprise",
     page_icon="⚜️",
@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# الألوان والتنسيقات
+# الألوان والتنسيق
 GOLD_MAIN = "#b9a779"
 GOLD_HOVER = "#cbb98b"
 BG_DARK = "#0d0f12"
@@ -116,24 +116,42 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# جلب المفتاح والتأكد من وجوده
+# جلب المفتاح
 gemini_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
 if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# إنشاء عميل Google GenAI بالرابط والمفتاح الصحيح
-client = genai.Client(api_key=gemini_key)
+# دالة الاستدعاء المباشر عبر API
+def call_gemini_api(prompt_text):
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    headers = {'Content-Type': 'application/json'}
+    payload = {
+        "system_instruction": {
+            "parts": [{
+                "text": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
+            }]
+        },
+        "contents": [{
+            "parts": [{"text": prompt_text}]
+        }]
+    }
+    
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 200:
+        data = response.json()
+        return data['candidates'][0]['content']['parts'][0]['text']
+    else:
+        raise Exception(f"خطأ ({response.status_code}): {response.text}")
 
-# إدارة حالة المحادثة
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # القائمة الجانبية
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المستقر</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المباشر المجاني</div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -162,15 +180,13 @@ with st.sidebar:
                 mime="text/plain"
             )
 
-# عنوان الصفحة
+# واجهة الشات الرئيسية
 st.markdown("<h1 class='gold-header'>⚜️ أوريون الشام Enterprise</h1>", unsafe_allow_html=True)
 
-# عرض الرسائل السابقة
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-# إدخال المستخدم
 user_input = st.chat_input("أدخل استفسارك أو أمرك البرمجي هنا...")
 
 if user_input:
@@ -191,16 +207,7 @@ if user_input:
     with st.chat_message("assistant"):
         with st.spinner("جاري التفكير والمعالجة..."):
             try:
-                # الطلب المباشر من النموذج المعتمد المضمون
-                response = client.models.generate_content(
-                    model='gemini-1.5-flash',
-                    contents=full_user_content,
-                    config=types.GenerateContentConfig(
-                        system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
-                    )
-                )
-                bot_response = response.text
-                
+                bot_response = call_gemini_api(full_user_content)
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
             except Exception as e:
