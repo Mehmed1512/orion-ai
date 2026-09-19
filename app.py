@@ -1,7 +1,8 @@
 import os
 import datetime
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 st.set_page_config(
     page_title="أوريون الشام Enterprise",
@@ -120,15 +121,15 @@ if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# تهيئة المفتاح رسمياً
-genai.configure(api_key=gemini_key)
+# إنشاء عميل Google GenAI بشكل مباشر مع تمرير المفتاح
+client = genai.Client(api_key=gemini_key)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المجاني والمستقر</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك Gemini الرسمي المجاني</div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -183,12 +184,14 @@ if user_input:
     with st.chat_message("assistant"):
         with st.spinner("جاري التفكير والمعالجة بالذكاء الشامي..."):
             try:
-                # استخدام النموذج المستقر عبر google.generativeai
-                model = genai.GenerativeModel(
-                    model_name='gemini-1.5-flash',
-                    system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
+                # استخدام النموذج المستقر بالاسم الصحيح المباشر
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=full_user_content,
+                    config=types.GenerateContentConfig(
+                        system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
+                    )
                 )
-                response = model.generate_content(full_user_content)
                 bot_response = response.text
                 
                 st.write(bot_response)
