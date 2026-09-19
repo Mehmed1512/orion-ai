@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# الألوان والتنسيق
+# التنسيقات والألوان
 GOLD_MAIN = "#b9a779"
 GOLD_HOVER = "#cbb98b"
 BG_DARK = "#0d0f12"
@@ -123,8 +123,33 @@ if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# دالة الاستدعاء المباشر الذكية مع التراجع التلقائي
+# دالة ذكية لمطالبة جوجل بقائمة النماذج الشغالة حالياً في حسابك وتحديد الأنسب تلقائياً
+@st.cache_data(ttl=3600)
+def get_working_model():
+    # الاستعلام عن النماذج المتاحة لحسابك من جوجل مباشرة
+    models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_key}"
+    try:
+        res = requests.get(models_url)
+        if res.status_code == 200:
+            models_data = res.json().get('models', [])
+            available_names = [m['name'] for m in models_data if 'generateContent' in m.get('supportedGenerationMethods', [])]
+            
+            # البحث عن أحدث وأفضل نموذج مجاني متوفر في القائمة
+            for m in available_names:
+                if 'flash' in m or 'pro' in m:
+                    # تحويل الاسم إلى الشكل المطلوب لاستدعاء API
+                    return m.replace("models/", "")
+            if available_names:
+                return available_names[0].replace("models/", "")
+    except Exception:
+        pass
+    # نموذج افتراضي في حال التعذر
+    return "gemini-1.5-flash"
+
+# دالة التوليد الديناميكية
 def call_gemini_api(prompt_text):
+    active_model = get_working_model()
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{active_model}:generateContent?key={gemini_key}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "system_instruction": {
@@ -136,23 +161,21 @@ def call_gemini_api(prompt_text):
             "parts": [{"text": prompt_text}]
         }]
     }
-
-    # المحاولة الأولى: gemini-2.5-flash
-    url_primary = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
-    res = requests.post(url_primary, headers=headers, json=payload)
     
-    if res.status_code == 200:
-        return res.json()['candidates'][0]['content']['parts'][0]['text']
-
-    # المحاولة الثانية في حال التعثر: gemini-1.5-flash عبر v1beta
-    url_fallback = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-    res_fb = requests.post(url_fallback, headers=headers, json=payload)
-
-    if res_fb.status_code == 200:
-        return res_fb.json()['candidates'][0]['content']['parts'][0]['text']
-
-    # إذا فشل كلاهما إظهار الخطأ المباشر
-    raise Exception(f"خطأ ({res.status_code}): {res.text}")
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 200:
+        data = response.json()
+        return data['candidates'][0]['content']['parts'][0]['text']
+    else:
+        # إذا حدث أي خطأ بالنموذج المختار، نعيد جلب قائمة النماذج بدون كاش لتحديث النموذج المتاح فوراً
+        st.cache_data.clear()
+        fresh_model = get_working_model()
+        retry_url = f"https://generativelanguage.googleapis.com/v1beta/models/{fresh_model}:generateContent?key={gemini_key}"
+        retry_res = requests.post(retry_url, headers=headers, json=payload)
+        if retry_res.status_code == 200:
+            return retry_res.json()['candidates'][0]['content']['parts'][0]['text']
+        else:
+            raise Exception(f"خطأ ({retry_res.status_code}): {retry_res.text}")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -160,7 +183,7 @@ if "messages" not in st.session_state:
 # القائمة الجانبية
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المباشر المجاني</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك Gemini التلقائي المستقر</div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -189,7 +212,7 @@ with st.sidebar:
                 mime="text/plain"
             )
 
-# واجهة الشات الرئيسية
+# الواجهة الرئيسية
 st.markdown("<h1 class='gold-header'>⚜️ أوريون الشام Enterprise</h1>", unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
