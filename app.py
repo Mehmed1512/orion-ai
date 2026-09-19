@@ -10,7 +10,7 @@ st.set_page_config(
     page_title="أوريون الشام Enterprise",
     page_icon="⚜️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 GOLD_MAIN = "#b9a779"
@@ -20,13 +20,12 @@ CARD_BG = "#151821"
 
 st.markdown(f"""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
     
     html, body, [class*="css"], .stApp {{
-        font-family: 'Cairo', 'Amiri', sans-serif !important;
+        font-family: 'Cairo', sans-serif !important;
         background-color: {BG_DARK} !important;
         color: #e2e8f0 !important;
-        direction: rtl;
     }}
     
     header[data-testid="stHeader"] {{
@@ -36,66 +35,77 @@ st.markdown(f"""
     section[data-testid="stSidebar"] {{
         background-color: #11131a !important;
         border-left: 1px solid rgba(185, 167, 121, 0.2) !important;
+        min-width: 280px !important;
+        max-width: 100vw !important;
     }}
 
     .stButton>button {{
         background: linear-gradient(135deg, {GOLD_MAIN} 0%, #9e8d63 100%) !important;
         color: #0d0f12 !important;
         font-weight: 700 !important;
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         border: 1px solid {GOLD_HOVER} !important;
-        padding: 0.65rem 1.25rem !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 0 4px 15px rgba(185, 167, 121, 0.18) !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.2s ease !important;
         width: 100%;
         font-family: 'Cairo', sans-serif !important;
     }}
 
     .stButton>button:hover {{
         background: linear-gradient(135deg, {GOLD_HOVER} 0%, {GOLD_MAIN} 100%) !important;
-        box-shadow: 0 6px 22px rgba(185, 167, 121, 0.4) !important;
-        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(185, 167, 121, 0.3) !important;
     }}
 
     div[data-testid="stChatMessage"] {{
         background-color: {CARD_BG} !important;
-        border-radius: 16px !important;
-        padding: 1.35rem !important;
-        margin-bottom: 1.1rem !important;
+        border-radius: 12px !important;
+        padding: 1rem !important;
+        margin-bottom: 0.8rem !important;
         border: 1px solid rgba(185, 167, 121, 0.15) !important;
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.3) !important;
     }}
 
     .stChatInputContainer textarea {{
         background-color: {CARD_BG} !important;
         color: #ffffff !important;
         border: 1px solid rgba(185, 167, 121, 0.35) !important;
-        border-radius: 14px !important;
+        border-radius: 10px !important;
         font-family: 'Cairo', sans-serif !important;
-    }}
-
-    .stChatInputContainer textarea:focus {{
-        border-color: {GOLD_MAIN} !important;
-        box-shadow: 0 0 14px rgba(185, 167, 121, 0.35) !important;
     }}
 
     .gold-header {{
         color: {GOLD_MAIN} !important;
         font-weight: 800 !important;
-        font-family: 'Amiri', serif !important;
-        letter-spacing: 0px;
+        font-family: 'Cairo', sans-serif !important;
+        word-break: break-word;
+        line-height: 1.4 !important;
+        margin-bottom: 0.5rem !important;
     }}
 
     .status-badge {{
         background: rgba(185, 167, 121, 0.12);
         color: {GOLD_MAIN};
-        padding: 6px 16px;
-        border-radius: 25px;
+        padding: 4px 12px;
+        border-radius: 20px;
         border: 1px solid rgba(185, 167, 121, 0.3);
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         display: inline-block;
         margin-bottom: 1rem;
         font-weight: 600;
+    }}
+
+    @media (max-width: 768px) {{
+        h1.gold-header {{
+            font-size: 1.4rem !important;
+        }}
+        h2.gold-header {{
+            font-size: 1.2rem !important;
+        }}
+        h4.gold-header {{
+            font-size: 1rem !important;
+        }}
+        div[data-testid="stChatMessage"] {{
+            padding: 0.75rem !important;
+        }}
     }}
 
     code {{
@@ -103,13 +113,13 @@ st.markdown(f"""
         color: #e5c07b !important;
         border-radius: 6px !important;
         padding: 2px 6px !important;
-        font-family: 'Courier New', monospace !important;
     }}
 
     pre {{
         border: 1px solid rgba(185, 167, 121, 0.25) !important;
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         background-color: #12141d !important;
+        overflow-x: auto !important;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -144,21 +154,21 @@ if "api_history" not in st.session_state:
     st.session_state.api_history = [
         {
             "role": "system",
-            "content": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة، الدقة، والأصالة الشامية. تبرع في البرمجة النظيفة، كتابة الأكواد، التفكير المنطقي، وتحليل النصوص بأسلوب راقٍ ومتقن باللغة العربية."
+            "content": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
         }
     ]
 
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك DeepSeek المطور v3.0</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ DeepSeek v3.0</div>", unsafe_allow_html=True)
     
     st.divider()
 
-    st.markdown("<h4 class='gold-header'>🖼️ توليد الصور الفنية</h4>", unsafe_allow_html=True)
-    image_prompt = st.text_input("وصف اللوحة البصرية:", placeholder="اكتب وصف الصورة...")
-    if st.button("توليد اللوحة البصرية"):
+    st.markdown("<h4 class='gold-header'>🖼️ توليد الصور</h4>", unsafe_allow_html=True)
+    image_prompt = st.text_input("وصف الصورة:", placeholder="اكتب الوصف...")
+    if st.button("توليد الصورة"):
         if image_prompt and gemini_key:
-            with st.spinner("جاري الرسم والتوليد..."):
+            with st.spinner("جاري التوليد..."):
                 try:
                     g_client = genai.Client(api_key=gemini_key)
                     result = g_client.models.generate_images(
@@ -173,31 +183,29 @@ with st.sidebar:
                     for generated_image in result.generated_images:
                         st.image(generated_image.image.image_bytes, caption=image_prompt, use_container_width=True)
                 except Exception as e:
-                    st.error(f"خطأ في توليد الصورة: {e}")
+                    st.error(f"خطأ: {e}")
         elif not gemini_key:
-            st.warning("يتطلب توليد الصور وجود GEMINI_API_KEY في Secrets.")
-        else:
-            st.warning("يرجى كتابة وصف الصورة أولاً.")
+            st.warning("يتطلب وجود GEMINI_API_KEY لتوليد الصور.")
 
     st.divider()
 
-    st.markdown("<h4 class='gold-header'>📄 إدارة الملفات والمرفقات</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 class='gold-header'>📄 إدارة المرفقات</h4>", unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
-        "ارفق ملف كود أو مستند نصي:",
+        "رفع ملف:",
         type=["txt", "py", "js", "html", "css", "json", "md"]
     )
 
     st.divider()
 
-    st.markdown("<h4 class='gold-header'>⚙️ إدارة الجلسة</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 class='gold-header'>⚙️ الجلسة</h4>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("جلسة جديدة"):
+        if st.button("جديد"):
             st.session_state.messages = []
             st.session_state.api_history = [
                 {
                     "role": "system",
-                    "content": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة، الدقة، والأصالة الشامية. تبرع في البرمجة النظيفة، كتابة الأكواد، التفكير المنطقي، وتحليل النصوص بأسلوب راقٍ ومتقن باللغة العربية."
+                    "content": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
                 }
             ]
             st.rerun()
@@ -212,13 +220,13 @@ with st.sidebar:
                 mime="text/plain"
             )
 
-st.markdown("<h1 class='gold-header'>⚜️ المساعد الذكي الفائق — أوريون الشام</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='gold-header'>⚜️ أوريون الشام Enterprise</h1>", unsafe_allow_html=True)
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
 
-user_input = st.chat_input("أدخل استفسارك، أمرك البرمجي، أو مسألتك هنا...")
+user_input = st.chat_input("أدخل استفسارك أو أمرك البرمجي هنا...")
 
 if user_input:
     display_text = user_input
@@ -237,7 +245,7 @@ if user_input:
     st.session_state.api_history.append({"role": "user", "content": full_user_content})
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري المعالجة والتفكير بالذكاء الشامي..."):
+        with st.spinner("جاري التفكير والمعالجة..."):
             try:
                 bot_response = query_deepseek(st.session_state.api_history)
                 st.write(bot_response)
