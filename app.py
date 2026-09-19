@@ -19,6 +19,7 @@ st.set_page_config(
 # ============================================================
 GOLD_MAIN   = "#c9b37e"
 GOLD_HOVER  = "#e0cc96"
+GOLD_SOFT   = "#d8c79a"
 BG_DARK     = "#0b0d11"
 CARD_BG     = "#151924"
 CARD_BG_2   = "#1b2130"
@@ -30,8 +31,15 @@ st.markdown(f"""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
 
-    html, body, [class*="css"], .stApp, p, span, div, label, input, textarea {{
-        font-family: 'Cairo', sans-serif !important;
+    /* ---------- الخط الأساسي (بدون تحديد شامل مفرط) ---------- */
+    html, body, .stApp {{
+        font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif !important;
+        line-height: 1.7 !important;
+    }}
+    .stApp p, .stApp span, .stApp li, .stApp label,
+    .stApp input, .stApp textarea, .stApp button,
+    .stApp [data-testid="stMarkdownContainer"] {{
+        font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif !important;
     }}
 
     .stApp {{
@@ -51,20 +59,19 @@ st.markdown(f"""
         background: linear-gradient(180deg, #10131b 0%, #0d1017 100%) !important;
         border-left: 1px solid {BORDER_GOLD} !important;
     }}
-    section[data-testid="stSidebar"] > div {{
-        padding-top: 1rem !important;
-    }}
 
-    /* ---------- العناوين ---------- */
+    /* ---------- العناوين (لون ذهبي صلب بدون قص الخلفية) ---------- */
     .gold-header {{
-        background: linear-gradient(135deg, {GOLD_HOVER} 0%, {GOLD_MAIN} 55%, #8f7d52 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        font-weight: 900 !important;
-        line-height: 1.5 !important;
-        margin: 0 0 0.4rem 0 !important;
+        color: {GOLD_MAIN} !important;
+        font-weight: 800 !important;
+        line-height: 1.6 !important;
+        margin: 0 0 0.5rem 0 !important;
+        display: block !important;
+        letter-spacing: 0.2px;
     }}
+    h1.gold-header {{ font-size: 1.8rem !important; }}
+    h2.gold-header {{ font-size: 1.4rem !important; }}
+    h4.gold-header {{ font-size: 1.05rem !important; }}
 
     .status-badge {{
         display: inline-flex;
@@ -77,6 +84,7 @@ st.markdown(f"""
         border-radius: 999px;
         font-size: 0.78rem;
         font-weight: 600;
+        line-height: 1.5;
     }}
     .status-badge::before {{
         content: "";
@@ -85,6 +93,7 @@ st.markdown(f"""
         background: #4ade80;
         box-shadow: 0 0 8px #4ade80;
         animation: pulse-dot 2s infinite;
+        flex-shrink: 0;
     }}
     @keyframes pulse-dot {{
         0%, 100% {{ opacity: 1; }}
@@ -95,19 +104,20 @@ st.markdown(f"""
     .stButton>button {{
         background: linear-gradient(135deg, {GOLD_MAIN} 0%, #a08c5e 100%) !important;
         color: #0d0f12 !important;
-        font-weight: 800 !important;
+        font-weight: 700 !important;
         border-radius: 10px !important;
         border: 1px solid {GOLD_HOVER} !important;
-        padding: 0.45rem 1rem !important;
         transition: all 0.18s ease !important;
         width: 100%;
+        line-height: 1.5 !important;
+        white-space: normal !important;
+        height: auto !important;
+        min-height: 2.5rem;
     }}
     .stButton>button:hover {{
         background: linear-gradient(135deg, {GOLD_HOVER} 0%, {GOLD_MAIN} 100%) !important;
         box-shadow: 0 4px 18px rgba(201, 179, 126, 0.35) !important;
-        transform: translateY(-1px);
     }}
-    .stButton>button:active {{ transform: translateY(0); }}
 
     .stDownloadButton>button {{
         background: transparent !important;
@@ -116,18 +126,21 @@ st.markdown(f"""
         border-radius: 10px !important;
         font-weight: 700 !important;
         width: 100%;
+        line-height: 1.5 !important;
+        white-space: normal !important;
+        height: auto !important;
+        min-height: 2.5rem;
     }}
     .stDownloadButton>button:hover {{
         background: rgba(201, 179, 126, 0.1) !important;
-        box-shadow: none !important;
     }}
 
-    /* ---------- فاصل أنيق ---------- */
-    hr {{
+    /* ---------- فاصل أنيق (محصور بكلاس لن يكسر عناصر أخرى) ---------- */
+    .stApp hr {{
         border: none !important;
         height: 1px !important;
         background: linear-gradient(90deg, transparent, {BORDER_GOLD}, transparent) !important;
-        margin: 1.1rem 0 !important;
+        margin: 1rem 0 !important;
     }}
 
     /* ---------- رسائل المحادثة ---------- */
@@ -137,43 +150,28 @@ st.markdown(f"""
         padding: 0.9rem 1.1rem !important;
         margin-bottom: 0.7rem !important;
         border: 1px solid rgba(255,255,255,0.06) !important;
-        transition: border-color 0.2s ease;
+        overflow-wrap: break-word !important;
     }}
-    div[data-testid="stChatMessage"]:hover {{
-        border-color: {BORDER_GOLD} !important;
+    div[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] p {{
+        line-height: 1.8 !important;
+        margin-bottom: 0.6rem !important;
     }}
 
     /* ---------- حقل الإدخال ---------- */
-    .stChatInputContainer {{
-        padding-bottom: 1rem !important;
-    }}
     .stChatInputContainer textarea {{
         background: {CARD_BG_2} !important;
         color: {TEXT_MAIN} !important;
         border: 1px solid {BORDER_GOLD} !important;
         border-radius: 14px !important;
         caret-color: {GOLD_MAIN} !important;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.35) !important;
+        line-height: 1.7 !important;
     }}
     .stChatInputContainer textarea:focus {{
         border-color: {GOLD_MAIN} !important;
         box-shadow: 0 0 0 3px rgba(201,179,126,0.12) !important;
     }}
-    .stChatInputContainer [data-testid="stChatInputSubmitButton"] svg {{
-        color: {GOLD_MAIN} !important;
-    }}
 
-    /* ---------- مربعات الاختيار والقوائم ---------- */
-    div[data-baseweb="select"] > div {{
-        background-color: {CARD_BG_2} !important;
-        border-color: {BORDER_GOLD} !important;
-        border-radius: 10px !important;
-    }}
-    div[data-baseweb="popover"] {{
-        background-color: #171c28 !important;
-    }}
-
-    /* ---------- السلايدرز ---------- */
+    /* ---------- السلايدرز والقوائم ---------- */
     div[data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {{
         background-color: {GOLD_MAIN} !important;
         border-color: {GOLD_HOVER} !important;
@@ -182,7 +180,6 @@ st.markdown(f"""
         background: linear-gradient(90deg, #8f7d52, {GOLD_MAIN}) !important;
     }}
 
-    /* ---------- رفع الملفات ---------- */
     section[data-testid="stFileUploaderDropzone"] {{
         background-color: {CARD_BG_2} !important;
         border: 1px dashed {BORDER_GOLD} !important;
@@ -202,30 +199,27 @@ st.markdown(f"""
         border-radius: 12px !important;
         background-color: #101421 !important;
         overflow-x: auto !important;
-        padding: 0.8rem !important;
     }}
 
     /* ---------- Expander ---------- */
-    details {{
+    .stApp details {{
         background: {CARD_BG} !important;
         border: 1px solid rgba(255,255,255,0.07) !important;
         border-radius: 12px !important;
-        padding: 0.4rem 0.8rem !important;
-        margin-bottom: 0.6rem;
     }}
-    details:hover {{ border-color: {BORDER_GOLD} !important; }}
-    summary {{
+    .stApp details summary {{
         font-weight: 700 !important;
         color: {GOLD_MAIN} !important;
+        line-height: 1.6 !important;
     }}
 
     /* ============================================================
-       التجاوب مع الشاشات (هاتف / تابلت / حاسوب)
+       التجاوب مع الشاشات
        ============================================================ */
     .block-container {{
         max-width: 960px !important;
         padding-top: 1.5rem !important;
-        padding-bottom: 6rem !important;
+        padding-bottom: 5rem !important;
     }}
 
     @media (max-width: 1024px) {{
@@ -235,26 +229,16 @@ st.markdown(f"""
     @media (max-width: 768px) {{
         section[data-testid="stSidebar"] {{
             min-width: 0 !important;
-            width: 82vw !important;
+            width: 84vw !important;
         }}
         .block-container {{
             padding-left: 0.9rem !important;
             padding-right: 0.9rem !important;
-            padding-top: 0.8rem !important;
         }}
-        h1 {{ font-size: 1.35rem !important; }}
+        h1.gold-header {{ font-size: 1.35rem !important; }}
         div[data-testid="stChatMessage"] {{
             padding: 0.7rem 0.8rem !important;
-            border-radius: 12px !important;
         }}
-        .stChatInputContainer button[aria-label] {{
-            padding: 0.3rem !important;
-        }}
-    }}
-
-    @media (max-width: 480px) {{
-        .gold-header {{ font-size: 1.05rem !important; }}
-        .status-badge {{ font-size: 0.72rem !important; }}
     }}
 
     /* شريط تمرير أنيق */
@@ -333,7 +317,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # ============================================================
-#  الشريط الجانبي — مركز الإعدادات الاحترافي
+#  الشريط الجانبي — مركز الإعدادات
 # ============================================================
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>⚜️ أوريون الشام</h2>", unsafe_allow_html=True)
@@ -346,10 +330,9 @@ with st.sidebar:
     mode = st.radio(
         "وضع المساعد:",
         ["💻 مساعد برمجي متقدم", "📊 مُحلل وإداري", "🎨 مبتكر وإبداعي", "⚡ سريع وموجز"],
-        index=0,
-        label_visibility="collapsed"
+        index=0
     )
-    mode_clean = mode.split(" ", 1)[1]  # إزالة الإيموجي للمفتاح
+    mode_clean = mode.split(" ", 1)[1]
 
     system_instructions = {
         "مساعد برمجي متقدم": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، وتصحيح الأخطاء باللغة العربية.",
@@ -364,27 +347,22 @@ with st.sidebar:
         temperature = st.slider(
             "🌡️ درجة الإبداع (Temperature)",
             min_value=0.0, max_value=1.0, value=0.7, step=0.05,
-            help="القيم المنخفضة = إجابات أكثر دقة وواقعية (مناسبة للبرمجة). القيم العالية = إجابات إبداعية."
+            help="القيم المنخفضة = إجابات أكثر دقة (مناسبة للبرمجة). العالية = إبداعية."
         )
 
         top_p = st.slider(
             "🎯 نطاق التنوع (Top-P)",
             min_value=0.1, max_value=1.0, value=0.95, step=0.05,
-            help="يتحكم في تنوع الكلمات المختارة. اتركه قريباً من 1 للأداء العام."
+            help="يتحكم في تنوع الكلمات المختارة."
         )
 
         max_tokens = st.select_slider(
-            "📏 الحد الأقصى للرموز (Tokens)",
+            "📏 الحد الأقصى للرموز",
             options=[512, 1024, 2048, 4096, 8192],
-            value=4096,
-            help="أقصى طول للإجابة الواحدة."
+            value=4096
         )
 
-        use_context = st.toggle(
-            "🧠 الذاكرة (سياق المحادثة)",
-            value=True,
-            help="عند التفعيل يرى النموذج آخر الرسائل لإجابات أكثر اتساقاً. أوقفه لكل سؤال مستقل."
-        )
+        use_context = st.toggle("🧠 الذاكرة (سياق المحادثة)", value=True)
 
         context_depth = st.slider(
             "عمق السياق (عدد الرسائل السابقة)",
@@ -398,8 +376,7 @@ with st.sidebar:
     st.markdown("<h4 class='gold-header'>📄 المرفقات والملفات</h4>", unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
         "رفع ملف للمعالجة:",
-        type=["txt", "py", "js", "html", "css", "json", "md", "csv", "sql"],
-        label_visibility="collapsed"
+        type=["txt", "py", "js", "html", "css", "json", "md", "csv", "sql"]
     )
     if uploaded_file is not None:
         st.caption(f"📎 تم تحميل: `{uploaded_file.name}`")
@@ -431,18 +408,17 @@ with st.sidebar:
 # ============================================================
 st.markdown("<h1 class='gold-header'>⚜️ أوريون الشام Enterprise</h1>", unsafe_allow_html=True)
 
-# رسالة ترحيبية عند بداية جلسة جديدة
 if not st.session_state.messages:
     st.markdown(
-        f"<div style='text-align:center; padding: 2.5rem 1rem; color: {TEXT_MUTED};'>"
-        f"<div style='font-size:2.6rem; margin-bottom:0.6rem;'>⚜️</div>"
-        f"<p style='font-size:1.05rem; font-weight:600; color:{GOLD_MAIN};'>مرحباً بك في أوريون الشام</p>"
-        f"<p style='font-size:0.9rem;'>اسألني أي شيء — برمجة، تحليل، إبداع، أو استشارة تقنية.</p>"
+        f"<div style='text-align:center; padding:2.5rem 1rem; color:{TEXT_MUTED};"
+        f"font-family:Cairo,sans-serif; line-height:2;'>"
+        f"<div style='font-size:2.6rem; margin-bottom:0.5rem;'>⚜️</div>"
+        f"<p style='font-size:1.05rem; font-weight:700; color:{GOLD_MAIN}; margin:0;'>مرحباً بك في أوريون الشام</p>"
+        f"<p style='font-size:0.9rem; margin:0;'>اسألني أي شيء — برمجة، تحليل، إبداع، أو استشارة تقنية.</p>"
         f"</div>",
         unsafe_allow_html=True
     )
 
-# عرض سجل الرسائل
 for msg in st.session_state.messages:
     avatar = "🧑‍💻" if msg["role"] == "user" else "⚜️"
     with st.chat_message(msg["role"], avatar=avatar):
@@ -463,7 +439,6 @@ if user_input:
     with st.chat_message("user", avatar="🧑‍💻"):
         st.write(display_text)
 
-    # بناء السياق الذكي (آخر N رسالة)
     full_user_content = user_input + file_context
     if use_context and len(st.session_state.messages) > 2:
         recent = st.session_state.messages[:-1][-context_depth:]
