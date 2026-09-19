@@ -186,7 +186,7 @@ if user_input:
             try:
                 # استخدام النموذج المستقر بالاسم الصحيح المباشر
                 response = client.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model='gemini-1.5-flash',
                     contents=full_user_content,
                     config=types.GenerateContentConfig(
                         system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
