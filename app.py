@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# التنسيقات والألوان
+# الألوان والتصميم الأنيق المطور
 GOLD_MAIN = "#b9a779"
 GOLD_HOVER = "#cbb98b"
 BG_DARK = "#0d0f12"
@@ -35,7 +35,7 @@ st.markdown(f"""
     section[data-testid="stSidebar"] {{
         background-color: #11131a !important;
         border-left: 1px solid rgba(185, 167, 121, 0.2) !important;
-        min-width: 290px !important;
+        min-width: 320px !important;
     }}
 
     .stButton>button {{
@@ -115,19 +115,27 @@ if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# دالة الاستدعاء المباشرة والمضمونة
-def call_gemini_api(prompt_text, system_instruction_text):
+# دالة الاستدعاء المباشرة المتقدمة التي تقبل معلمات التحكم (Temperature & Max Tokens)
+def call_gemini_api(prompt_text, system_instruction_text, temperature, max_tokens):
     headers = {'Content-Type': 'application/json'}
+    
+    # بناء إعدادات التوليد
+    generation_config = {
+        "temperature": temperature,
+        "maxOutputTokens": max_tokens
+    }
+    
     payload = {
         "system_instruction": {
             "parts": [{"text": system_instruction_text}]
         },
         "contents": [{
             "parts": [{"text": prompt_text}]
-        }]
+        }],
+        "generationConfig": generation_config
     }
 
-    # 1. التجربة على النموذج الموصى به رسمياً
+    # 1. المحاولة الأولى: gemini-3.6-flash
     url_primary = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
     res = requests.post(url_primary, headers=headers, json=payload)
     if res.status_code == 200:
@@ -154,35 +162,55 @@ def call_gemini_api(prompt_text, system_instruction_text):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# القائمة الجانبية المطورة
+# القائمة الجانبية (شريط إعدادات متطور مثل ChatGPT)
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>🟢 النظام متصل ومستقر</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>🟢 المحرك متصل ومستقر</div>", unsafe_allow_html=True)
     
     st.divider()
 
-    # خيار تحديد النمط
-    st.markdown("<h4 class='gold-header'>🎯 نمط المساعد</h4>", unsafe_allow_html=True)
+    # قسم إعدادات النمط والتخصص
+    st.markdown("<h4 class='gold-header'>🎯 تخصيص النموذج</h4>", unsafe_allow_html=True)
     mode = st.selectbox(
-        "اختر نمط الاستجابة:",
-        ["مساعد برمجي متقدم", "مُحلل وإداري", "سريع وموجز"],
+        "وضع المساعد:",
+        ["مساعد برمجي متقدم", "مُحلل وإداري", "مبتكر وإبداعي", "سريع وموجز"],
         index=0
     )
 
-    # توجيه النظام حسب النمط المختار
     system_instructions = {
         "مساعد برمجي متقدم": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، وتصحيح الأخطاء باللغة العربية.",
-        "مُحلل وإداري": "أنت مستشار تقني وإداري خبير في نظام أوريون الشام. تقدم تحليلات دقيقة، خطط عملية، وإجابات هيكلية واضحة باللغة العربية.",
-        "سريع وموجز": "أنت مساعد سريع يقدّم إجابات مباشرة، مختصرة ومفيدة دون إطالة أو مقدمات."
+        "مُحلل وإداري": "أنت مستشار تقني وإداري خبير. تقدم تحليلات دقيقة، خطط عملية، وإجابات هيكلية واضحة باللغة العربية.",
+        "مبتكر وإبداعي": "أنت محرك فكري ومبدع. تقدم أفكاراً غير تقليدية وحلولاً ابتكارية متميزة باللغة العربية.",
+        "سريع وموجز": "أنت مساعد سريع يقدّم إجابات مباشرة، مختصرة ومفيدة دون إطالة."
     }
     selected_instruction = system_instructions[mode]
 
+    # قسم إعدادات المعلمات (معلمات ChatGPT المتقدمة)
+    with st.expander("⚙️ إعدادات التوليد (Advanced Parameters)", expanded=False):
+        temperature = st.slider(
+            "درجة الإبداع (Temperature):",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.7,
+            step=0.05,
+            help="القيم المنخفضة تدل على إجابات أكثر دقة وواقعية (مناسبة للبرمجة). القيم العالية تدل على إجابات إبداعية."
+        )
+        
+        max_tokens = st.slider(
+            "الحد الأقصى للكلمات/الرموز:",
+            min_value=256,
+            max_value=8192,
+            value=4096,
+            step=256,
+            help="حدد أقصى طول للإجابة الواحدة."
+        )
+
     st.divider()
 
-    # إدارة المرفقات ومعاينتها
-    st.markdown("<h4 class='gold-header'>📄 المرفقات</h4>", unsafe_allow_html=True)
+    # إدارة المرفقات
+    st.markdown("<h4 class='gold-header'>📄 المرفقات والملفات</h4>", unsafe_allow_html=True)
     uploaded_file = st.file_uploader(
-        "رفع ملف:",
+        "رفع ملف معالجة:",
         type=["txt", "py", "js", "html", "css", "json", "md", "csv", "sql"]
     )
     
@@ -191,13 +219,13 @@ with st.sidebar:
 
     st.divider()
 
-    # التحكم بالجلسة والسجل
-    st.markdown("<h4 class='gold-header'>⚙️ إدارة الجلسة</h4>", unsafe_allow_html=True)
-    st.write(f"💬 عدد الرسائل: **{len(st.session_state.messages)}**")
+    # إدارة الجلسة والسجل
+    st.markdown("<h4 class='gold-header'>⚙️ إدارة المحادثة</h4>", unsafe_allow_html=True)
+    st.write(f"💬 إجمالي الرسائل: **{len(st.session_state.messages)}**")
     
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("جديد"):
+        if st.button("جلسة جديدة"):
             st.session_state.messages = []
             st.rerun()
             
@@ -205,7 +233,7 @@ with st.sidebar:
         if st.session_state.messages:
             chat_text = "\n\n".join([f"{m['role'].upper()}: {m['content']}" for m in st.session_state.messages])
             st.download_button(
-                label="تصدير",
+                label="تصدير السجل",
                 data=chat_text,
                 file_name=f"chat_export_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                 mime="text/plain"
@@ -214,7 +242,7 @@ with st.sidebar:
 # الواجهة الرئيسية
 st.markdown("<h1 class='gold-header'>⚜️ أوريون الشام Enterprise</h1>", unsafe_allow_html=True)
 
-# عرض الرسائل
+# عرض سجل الرسائل
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
@@ -237,9 +265,14 @@ if user_input:
     full_user_content = user_input + file_context
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري التفكير والمعالجة..."):
+        with st.spinner("جاري المعالجة بناءً على الإعدادات المحددة..."):
             try:
-                bot_response = call_gemini_api(full_user_content, selected_instruction)
+                bot_response = call_gemini_api(
+                    full_user_content, 
+                    selected_instruction, 
+                    temperature, 
+                    max_tokens
+                )
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
             except Exception as e:
