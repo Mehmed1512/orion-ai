@@ -9,7 +9,7 @@ st.set_page_config(
     page_title="أوريون الشام Enterprise",
     page_icon="⚜️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # التنسيقات والألوان
@@ -35,8 +35,7 @@ st.markdown(f"""
     section[data-testid="stSidebar"] {{
         background-color: #11131a !important;
         border-left: 1px solid rgba(185, 167, 121, 0.2) !important;
-        min-width: 280px !important;
-        max-width: 100vw !important;
+        min-width: 290px !important;
     }}
 
     .stButton>button {{
@@ -93,13 +92,6 @@ st.markdown(f"""
         font-weight: 600;
     }}
 
-    @media (max-width: 768px) {{
-        h1.gold-header {{ font-size: 1.4rem !important; }}
-        h2.gold-header {{ font-size: 1.2rem !important; }}
-        h4.gold-header {{ font-size: 1rem !important; }}
-        div[data-testid="stChatMessage"] {{ padding: 0.75rem !important; }}
-    }}
-
     code {{
         background-color: #1a1d27 !important;
         color: #e5c07b !important;
@@ -123,27 +115,25 @@ if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# دالة الاستدعاء المباشر والاحتياطي
-def call_gemini_api(prompt_text):
+# دالة الاستدعاء المباشرة والمضمونة
+def call_gemini_api(prompt_text, system_instruction_text):
     headers = {'Content-Type': 'application/json'}
     payload = {
         "system_instruction": {
-            "parts": [{
-                "text": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
-            }]
+            "parts": [{"text": system_instruction_text}]
         },
         "contents": [{
             "parts": [{"text": prompt_text}]
         }]
     }
 
-    # 1. المحاولة الأولى باستخدام النموذج الموصى به رسمياً: gemini-3.6-flash
+    # 1. التجربة على النموذج الموصى به رسمياً
     url_primary = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
     res = requests.post(url_primary, headers=headers, json=payload)
     if res.status_code == 200:
         return res.json()['candidates'][0]['content']['parts'][0]['text']
 
-    # 2. المحاولة الثانية: الاستعلام الديناميكي عن النماذج الشغالة بالحساب
+    # 2. خطة التراجع الديناميكية
     models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_key}"
     try:
         models_res = requests.get(models_url)
@@ -164,22 +154,47 @@ def call_gemini_api(prompt_text):
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# القائمة الجانبية
+# القائمة الجانبية المطورة
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك Gemini 3.6 المستقر</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>🟢 النظام متصل ومستقر</div>", unsafe_allow_html=True)
     
     st.divider()
 
-    st.markdown("<h4 class='gold-header'>📄 إدارة المرفقات</h4>", unsafe_allow_html=True)
-    uploaded_file = st.file_uploader(
-        "رفع ملف:",
-        type=["txt", "py", "js", "html", "css", "json", "md"]
+    # خيار تحديد النمط
+    st.markdown("<h4 class='gold-header'>🎯 نمط المساعد</h4>", unsafe_allow_html=True)
+    mode = st.selectbox(
+        "اختر نمط الاستجابة:",
+        ["مساعد برمجي متقدم", "مُحلل وإداري", "سريع وموجز"],
+        index=0
     )
+
+    # توجيه النظام حسب النمط المختار
+    system_instructions = {
+        "مساعد برمجي متقدم": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، وتصحيح الأخطاء باللغة العربية.",
+        "مُحلل وإداري": "أنت مستشار تقني وإداري خبير في نظام أوريون الشام. تقدم تحليلات دقيقة، خطط عملية، وإجابات هيكلية واضحة باللغة العربية.",
+        "سريع وموجز": "أنت مساعد سريع يقدّم إجابات مباشرة، مختصرة ومفيدة دون إطالة أو مقدمات."
+    }
+    selected_instruction = system_instructions[mode]
 
     st.divider()
 
-    st.markdown("<h4 class='gold-header'>⚙️ الجلسة</h4>", unsafe_allow_html=True)
+    # إدارة المرفقات ومعاينتها
+    st.markdown("<h4 class='gold-header'>📄 المرفقات</h4>", unsafe_allow_html=True)
+    uploaded_file = st.file_uploader(
+        "رفع ملف:",
+        type=["txt", "py", "js", "html", "css", "json", "md", "csv", "sql"]
+    )
+    
+    if uploaded_file is not None:
+        st.caption(f"📎 تم تحميل: `{uploaded_file.name}`")
+
+    st.divider()
+
+    # التحكم بالجلسة والسجل
+    st.markdown("<h4 class='gold-header'>⚙️ إدارة الجلسة</h4>", unsafe_allow_html=True)
+    st.write(f"💬 عدد الرسائل: **{len(st.session_state.messages)}**")
+    
     col1, col2 = st.columns(2)
     with col1:
         if st.button("جديد"):
@@ -192,13 +207,14 @@ with st.sidebar:
             st.download_button(
                 label="تصدير",
                 data=chat_text,
-                file_name=f"export_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                file_name=f"chat_export_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.txt",
                 mime="text/plain"
             )
 
 # الواجهة الرئيسية
 st.markdown("<h1 class='gold-header'>⚜️ أوريون الشام Enterprise</h1>", unsafe_allow_html=True)
 
+# عرض الرسائل
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.write(msg["content"])
@@ -223,7 +239,7 @@ if user_input:
     with st.chat_message("assistant"):
         with st.spinner("جاري التفكير والمعالجة..."):
             try:
-                bot_response = call_gemini_api(full_user_content)
+                bot_response = call_gemini_api(full_user_content, selected_instruction)
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
             except Exception as e:
