@@ -131,15 +131,16 @@ if not openrouter_key:
     st.error("يرجى إضافة OPENROUTER_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-def query_openrouter_deepseek(messages_list):
+def query_openrouter(messages_list):
     headers = {
         "Authorization": f"Bearer {openrouter_key}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://streamlit.io",
         "X-Title": "Orion Al-Sham Enterprise"
     }
+    # تم التغيير إلى نموذج مجاني ومستقر 100%
     payload = {
-        "model": "deepseek/deepseek-chat:free",
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
         "messages": messages_list
     }
     response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
@@ -161,7 +162,7 @@ if "api_history" not in st.session_state:
 
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ DeepSeek Chat (مجاني)</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك الذكاء المجاني v3.0</div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -248,7 +249,7 @@ if user_input:
     with st.chat_message("assistant"):
         with st.spinner("جاري التفكير والمعالجة بالذكاء الشامي..."):
             try:
-                bot_response = query_openrouter_deepseek(st.session_state.api_history)
+                bot_response = query_openrouter(st.session_state.api_history)
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
                 st.session_state.api_history.append({"role": "assistant", "content": bot_response})
