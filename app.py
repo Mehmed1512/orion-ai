@@ -1,7 +1,6 @@
 import os
 import json
 import datetime
-import requests
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -124,56 +123,30 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-openrouter_key = st.secrets.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
 gemini_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
-if not openrouter_key:
-    st.error("يرجى إضافة OPENROUTER_API_KEY في Streamlit Secrets للبدء.")
+if not gemini_key:
+    st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-def query_openrouter(messages_list):
-    headers = {
-        "Authorization": f"Bearer {openrouter_key}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://streamlit.io",
-        "X-Title": "Orion Al-Sham Enterprise"
-    }
-    # تم التغيير إلى نموذج مجاني ومستقر 100%
-    payload = {
-        "model": "meta-llama/llama-3.3-70b-instruct:free",
-        "messages": messages_list
-    }
-    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
-    if response.status_code == 200:
-        return response.json()['choices'][0]['message']['content']
-    else:
-        raise Exception(f"خطأ المزود ({response.status_code}): {response.text}")
+client = genai.Client(api_key=gemini_key)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "api_history" not in st.session_state:
-    st.session_state.api_history = [
-        {
-            "role": "system",
-            "content": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
-        }
-    ]
-
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك الذكاء المجاني v3.0</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المستقر 100%</div>", unsafe_allow_html=True)
     
     st.divider()
 
     st.markdown("<h4 class='gold-header'>🖼️ توليد الصور</h4>", unsafe_allow_html=True)
     image_prompt = st.text_input("وصف الصورة:", placeholder="اكتب الوصف...")
     if st.button("توليد الصورة"):
-        if image_prompt and gemini_key:
+        if image_prompt:
             with st.spinner("جاري التوليد..."):
                 try:
-                    g_client = genai.Client(api_key=gemini_key)
-                    result = g_client.models.generate_images(
+                    result = client.models.generate_images(
                         model='imagen-3.0-generate-002',
                         prompt=image_prompt,
                         config=types.GenerateImagesConfig(
@@ -186,8 +159,8 @@ with st.sidebar:
                         st.image(generated_image.image.image_bytes, caption=image_prompt, use_container_width=True)
                 except Exception as e:
                     st.error(f"خطأ: {e}")
-        elif not gemini_key:
-            st.warning("يتطلب وجود GEMINI_API_KEY لتوليد الصور.")
+        else:
+            st.warning("يرجى كتابة وصف الصورة أولاً.")
 
     st.divider()
 
@@ -204,12 +177,6 @@ with st.sidebar:
     with col1:
         if st.button("جديد"):
             st.session_state.messages = []
-            st.session_state.api_history = [
-                {
-                    "role": "system",
-                    "content": "أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
-                }
-            ]
             st.rerun()
             
     with col2:
@@ -244,14 +211,19 @@ if user_input:
         st.write(display_text)
 
     full_user_content = user_input + file_context
-    st.session_state.api_history.append({"role": "user", "content": full_user_content})
 
     with st.chat_message("assistant"):
         with st.spinner("جاري التفكير والمعالجة بالذكاء الشامي..."):
             try:
-                bot_response = query_openrouter(st.session_state.api_history)
+                response = client.models.generate_content(
+                    model='gemini-1.5-flash',
+                    contents=full_user_content,
+                    config=types.GenerateContentConfig(
+                        system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
+                    )
+                )
+                bot_response = response.text
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
-                st.session_state.api_history.append({"role": "assistant", "content": bot_response})
             except Exception as e:
                 st.error(f"حدث خطأ أثناء المعالجة: {e}")
