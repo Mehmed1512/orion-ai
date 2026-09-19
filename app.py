@@ -12,7 +12,7 @@ st.set_page_config(
 st.title("🤖 المساعد الذكي الشخصي")
 st.caption("مساعد متكامل لإدارة المهام، قراءة الصور والملفات، وإنشاء المستندات")
 
-API_KEY = "AQ.Ab8RN6KkanCD8-XHpVtN3fmEjcaF8rYcv0FDbfwWS2pzeLupaQ"
+API_KEY = "AQ.Ab8RN6KrNkOzrtovH9kP_7xtQDY0FeZEgtvDvngHuKMTIdSPjw"
 client = genai.Client(api_key=API_KEY)
 
 def get_current_time() -> str:
