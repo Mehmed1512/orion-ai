@@ -123,9 +123,8 @@ if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# دالة الاستدعاء المباشر عبر API
+# دالة الاستدعاء المباشر الذكية مع التراجع التلقائي
 def call_gemini_api(prompt_text):
-    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={gemini_key}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "system_instruction": {
@@ -137,13 +136,23 @@ def call_gemini_api(prompt_text):
             "parts": [{"text": prompt_text}]
         }]
     }
+
+    # المحاولة الأولى: gemini-2.5-flash
+    url_primary = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    res = requests.post(url_primary, headers=headers, json=payload)
     
-    response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 200:
-        data = response.json()
-        return data['candidates'][0]['content']['parts'][0]['text']
-    else:
-        raise Exception(f"خطأ ({response.status_code}): {response.text}")
+    if res.status_code == 200:
+        return res.json()['candidates'][0]['content']['parts'][0]['text']
+
+    # المحاولة الثانية في حال التعثر: gemini-1.5-flash عبر v1beta
+    url_fallback = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    res_fb = requests.post(url_fallback, headers=headers, json=payload)
+
+    if res_fb.status_code == 200:
+        return res_fb.json()['candidates'][0]['content']['parts'][0]['text']
+
+    # إذا فشل كلاهما إظهار الخطأ المباشر
+    raise Exception(f"خطأ ({res.status_code}): {res.text}")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
