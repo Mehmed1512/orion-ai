@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import datetime
 from google import genai
@@ -12,8 +13,14 @@ st.set_page_config(
 st.title("🤖 المساعد الذكي الشخصي")
 st.caption("مساعد متكامل لإدارة المهام، قراءة الصور والملفات، وإنشاء المستندات")
 
-API_KEY = "AQ.Ab8RN6KrNkOzrtovH9kP_7xtQDY0FeZEgtvDvngHuKMTIdSPjw"
-client = genai.Client(api_key=API_KEY)
+# جلب المفتاح بأمان من Secrets
+api_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
+
+if not api_key:
+    st.error("لم يتم العثور على API Key! يرجى إضافته في Streamlit Secrets.")
+    st.stop()
+
+client = genai.Client(api_key=api_key)
 
 def get_current_time() -> str:
     """ترجع الوقت والتاريخ الحاليين بدقة."""
