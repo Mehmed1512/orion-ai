@@ -124,24 +124,25 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-deepseek_key = st.secrets.get("DEEPSEEK_API_KEY") or os.environ.get("DEEPSEEK_API_KEY")
+openrouter_key = st.secrets.get("OPENROUTER_API_KEY") or os.environ.get("OPENROUTER_API_KEY")
 gemini_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
-if not deepseek_key:
-    st.error("يرجى إضافة DEEPSEEK_API_KEY في Streamlit Secrets للبدء.")
+if not openrouter_key:
+    st.error("يرجى إضافة OPENROUTER_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-def query_deepseek(messages_list):
+def query_openrouter_deepseek(messages_list):
     headers = {
-        "Authorization": f"Bearer {deepseek_key}",
-        "Content-Type": "application/json"
+        "Authorization": f"Bearer {openrouter_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://streamlit.io",
+        "X-Title": "Orion Al-Sham Enterprise"
     }
     payload = {
-        "model": "deepseek-chat",
-        "messages": messages_list,
-        "temperature": 0.7
+        "model": "deepseek/deepseek-r1:free",
+        "messages": messages_list
     }
-    response = requests.post("https://api.deepseek.com/v1/chat/completions", headers=headers, json=payload)
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
     if response.status_code == 200:
         return response.json()['choices'][0]['message']['content']
     else:
@@ -160,7 +161,7 @@ if "api_history" not in st.session_state:
 
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ DeepSeek v3.0</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ DeepSeek R1 (مجاني)</div>", unsafe_allow_html=True)
     
     st.divider()
 
@@ -245,9 +246,9 @@ if user_input:
     st.session_state.api_history.append({"role": "user", "content": full_user_content})
 
     with st.chat_message("assistant"):
-        with st.spinner("جاري التفكير والمعالجة..."):
+        with st.spinner("جاري التفكير والمعالجة بالذكاء الشامي..."):
             try:
-                bot_response = query_deepseek(st.session_state.api_history)
+                bot_response = query_openrouter_deepseek(st.session_state.api_history)
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
                 st.session_state.api_history.append({"role": "assistant", "content": bot_response})
