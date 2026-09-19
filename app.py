@@ -139,7 +139,7 @@ def query_openrouter_deepseek(messages_list):
         "X-Title": "Orion Al-Sham Enterprise"
     }
     payload = {
-        "model": "deepseek/deepseek-r1:free",
+        "model": "deepseek/deepseek-chat:free",
         "messages": messages_list
     }
     response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
@@ -161,7 +161,7 @@ if "api_history" not in st.session_state:
 
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ DeepSeek R1 (مجاني)</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ DeepSeek Chat (مجاني)</div>", unsafe_allow_html=True)
     
     st.divider()
 
