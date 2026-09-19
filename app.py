@@ -123,33 +123,8 @@ if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-# دالة ذكية لمطالبة جوجل بقائمة النماذج الشغالة حالياً في حسابك وتحديد الأنسب تلقائياً
-@st.cache_data(ttl=3600)
-def get_working_model():
-    # الاستعلام عن النماذج المتاحة لحسابك من جوجل مباشرة
-    models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_key}"
-    try:
-        res = requests.get(models_url)
-        if res.status_code == 200:
-            models_data = res.json().get('models', [])
-            available_names = [m['name'] for m in models_data if 'generateContent' in m.get('supportedGenerationMethods', [])]
-            
-            # البحث عن أحدث وأفضل نموذج مجاني متوفر في القائمة
-            for m in available_names:
-                if 'flash' in m or 'pro' in m:
-                    # تحويل الاسم إلى الشكل المطلوب لاستدعاء API
-                    return m.replace("models/", "")
-            if available_names:
-                return available_names[0].replace("models/", "")
-    except Exception:
-        pass
-    # نموذج افتراضي في حال التعذر
-    return "gemini-1.5-flash"
-
-# دالة التوليد الديناميكية
+# دالة الاستدعاء المباشر والاحتياطي
 def call_gemini_api(prompt_text):
-    active_model = get_working_model()
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{active_model}:generateContent?key={gemini_key}"
     headers = {'Content-Type': 'application/json'}
     payload = {
         "system_instruction": {
@@ -161,21 +136,30 @@ def call_gemini_api(prompt_text):
             "parts": [{"text": prompt_text}]
         }]
     }
-    
-    response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 200:
-        data = response.json()
-        return data['candidates'][0]['content']['parts'][0]['text']
-    else:
-        # إذا حدث أي خطأ بالنموذج المختار، نعيد جلب قائمة النماذج بدون كاش لتحديث النموذج المتاح فوراً
-        st.cache_data.clear()
-        fresh_model = get_working_model()
-        retry_url = f"https://generativelanguage.googleapis.com/v1beta/models/{fresh_model}:generateContent?key={gemini_key}"
-        retry_res = requests.post(retry_url, headers=headers, json=payload)
-        if retry_res.status_code == 200:
-            return retry_res.json()['candidates'][0]['content']['parts'][0]['text']
-        else:
-            raise Exception(f"خطأ ({retry_res.status_code}): {retry_res.text}")
+
+    # 1. المحاولة الأولى باستخدام النموذج الموصى به رسمياً: gemini-3.6-flash
+    url_primary = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
+    res = requests.post(url_primary, headers=headers, json=payload)
+    if res.status_code == 200:
+        return res.json()['candidates'][0]['content']['parts'][0]['text']
+
+    # 2. المحاولة الثانية: الاستعلام الديناميكي عن النماذج الشغالة بالحساب
+    models_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={gemini_key}"
+    try:
+        models_res = requests.get(models_url)
+        if models_res.status_code == 200:
+            models_list = models_res.json().get('models', [])
+            for m in models_list:
+                m_name = m.get('name', '').replace('models/', '')
+                if 'generateContent' in m.get('supportedGenerationMethods', []):
+                    fallback_url = f"https://generativelanguage.googleapis.com/v1beta/models/{m_name}:generateContent?key={gemini_key}"
+                    fb_res = requests.post(fallback_url, headers=headers, json=payload)
+                    if fb_res.status_code == 200:
+                        return fb_res.json()['candidates'][0]['content']['parts'][0]['text']
+    except Exception:
+        pass
+
+    raise Exception(f"خطأ ({res.status_code}): {res.text}")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -183,7 +167,7 @@ if "messages" not in st.session_state:
 # القائمة الجانبية
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك Gemini التلقائي المستقر</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك Gemini 3.6 المستقر</div>", unsafe_allow_html=True)
     
     st.divider()
 
