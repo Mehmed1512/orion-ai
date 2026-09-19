@@ -1,9 +1,7 @@
 import os
-import json
 import datetime
 import streamlit as st
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 st.set_page_config(
     page_title="أوريون الشام Enterprise",
@@ -93,18 +91,10 @@ st.markdown(f"""
     }}
 
     @media (max-width: 768px) {{
-        h1.gold-header {{
-            font-size: 1.4rem !important;
-        }}
-        h2.gold-header {{
-            font-size: 1.2rem !important;
-        }}
-        h4.gold-header {{
-            font-size: 1rem !important;
-        }}
-        div[data-testid="stChatMessage"] {{
-            padding: 0.75rem !important;
-        }}
+        h1.gold-header {{ font-size: 1.4rem !important; }}
+        h2.gold-header {{ font-size: 1.2rem !important; }}
+        h4.gold-header {{ font-size: 1rem !important; }}
+        div[data-testid="stChatMessage"] {{ padding: 0.75rem !important; }}
     }}
 
     code {{
@@ -123,45 +113,23 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
+# جلب المفتاح والتأكد منه
 gemini_key = st.secrets.get("GEMINI_API_KEY") or os.environ.get("GEMINI_API_KEY")
 
 if not gemini_key:
     st.error("يرجى إضافة GEMINI_API_KEY في Streamlit Secrets للبدء.")
     st.stop()
 
-client = genai.Client(api_key=gemini_key)
+# تهيئة المفتاح رسمياً
+genai.configure(api_key=gemini_key)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 with st.sidebar:
     st.markdown("<h2 class='gold-header'>🏛️ أوريون الشام</h2>", unsafe_allow_html=True)
-    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المستقر 100%</div>", unsafe_allow_html=True)
+    st.markdown("<div class='status-badge'>⚜️ محرك Gemini المجاني والمستقر</div>", unsafe_allow_html=True)
     
-    st.divider()
-
-    st.markdown("<h4 class='gold-header'>🖼️ توليد الصور</h4>", unsafe_allow_html=True)
-    image_prompt = st.text_input("وصف الصورة:", placeholder="اكتب الوصف...")
-    if st.button("توليد الصورة"):
-        if image_prompt:
-            with st.spinner("جاري التوليد..."):
-                try:
-                    result = client.models.generate_images(
-                        model='imagen-3.0-generate-002',
-                        prompt=image_prompt,
-                        config=types.GenerateImagesConfig(
-                            number_of_images=1,
-                            output_mime_type="image/jpeg",
-                            aspect_ratio="1:1"
-                        )
-                    )
-                    for generated_image in result.generated_images:
-                        st.image(generated_image.image.image_bytes, caption=image_prompt, use_container_width=True)
-                except Exception as e:
-                    st.error(f"خطأ: {e}")
-        else:
-            st.warning("يرجى كتابة وصف الصورة أولاً.")
-
     st.divider()
 
     st.markdown("<h4 class='gold-header'>📄 إدارة المرفقات</h4>", unsafe_allow_html=True)
@@ -215,14 +183,14 @@ if user_input:
     with st.chat_message("assistant"):
         with st.spinner("جاري التفكير والمعالجة بالذكاء الشامي..."):
             try:
-                response = client.models.generate_content(
-                    model='gemini-1.5-flash',
-                    contents=full_user_content,
-                    config=types.GenerateContentConfig(
-                        system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
-                    )
+                # استخدام النموذج المستقر عبر google.generativeai
+                model = genai.GenerativeModel(
+                    model_name='gemini-1.5-flash',
+                    system_instruction="أنت مساعد ذكي متطور ومستقل (أوريون الشام Enterprise). تتسم بالحكمة والدقة. تبرع في البرمجة النظيفة، كتابة الأكواد، والتفكير المنطقي باللغة العربية."
                 )
+                response = model.generate_content(full_user_content)
                 bot_response = response.text
+                
                 st.write(bot_response)
                 st.session_state.messages.append({"role": "assistant", "content": bot_response})
             except Exception as e:
